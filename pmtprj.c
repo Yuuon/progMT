@@ -10,6 +10,7 @@
 #define TIME_EASY 120
 #define TIME_NORMAL 60
 #define TIME_HARD 30
+#define N 100 //maximum timer
 
 int i=0,t=1;
 
@@ -56,7 +57,7 @@ int NB_fuyant(int NB_SECRET){
 }
 
 int main(){
-	int a,b;
+    int a,b,pid;
 	srand((int)time(0));
 	a=rand()%100;
 	do{
@@ -80,19 +81,15 @@ int main(){
 		case 2: {NB_prop=NORMAL;TIME=TIME_NORMAL;break;}
 		default: {NB_prop=HARD;TIME=TIME_HARD;}
 	}
-	printf("The secret number is between %d and %d!",a,b);
+    printf("The secret number is between %d and %d!\n",a,b);
 	setTimer(TIME,1);
-	do{
-		int tube[2];
-		pipe(tube);
-		switch(fork()){
+    switch(pid=fork()){
 		case -1:{
 			perror("error in create processus");
 			exit(99);
 		}
-		case 1:{
-			close(tube[0]);
-			write(tube[1],getpid(),4);
+        case 0:{
+        do{
 			if(NB_prop>1){
 				printf("You have %d tries left\n",NB_prop);
 			}else{printf("You have only 1 try left\n");}
@@ -114,17 +111,15 @@ int main(){
 		}while(NB_prop>0); 
 		break;
 		}
-		case 0:{
-			int ppid;
-			close(tube[1]);
-			read(tube[0],ppid,4);
+        case 1:{
 			setTimer(TIME,1);
-			signal(SIGALRM,timeout());
+            signal(SIGALRM,timeout);
 			while(1){
 				sleep(1);
-				kill(ppid,SIGALRM);
+                kill(pid,SIGALRM);
 			}
 		}
+        }
 	if(NB_prop==0){
 		printf("You failed!The secret number is:%d\n",NB_SECRET);
 	}
